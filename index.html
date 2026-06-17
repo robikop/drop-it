@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drop Log</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#000000;
+    --surface:#0c0c0c;
+    --surface-raised:#141414;
+    --line:#232323;
+    --ink:#f2f0ec;
+    --ink-dim:#8a8a86;
+    --ink-faint:#4a4a47;
+
+    --exo:#5b9bd5;
+    --exo-dim:#274154;
+    --fml:#e0a23c;
+    --fml-dim:#4a3a1a;
+
+    --done:#5fae7e;
+    --done-bg:#0f1f15;
+    --overdue:#e2685a;
+    --overdue-bg:#241310;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{padding-bottom:60px;}
+
+  /* ---------- header ---------- */
+  .header{
+    padding:30px 20px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-size:10.5px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin:0 0 10px 0;
+    font-weight:500;
+  }
+  h1{
+    font-family:'Fraunces', Georgia, serif;
+    font-optical-sizing:auto;
+    font-size:34px;
+    font-weight:480;
+    letter-spacing:-0.01em;
+    margin:0;
+    color:var(--ink);
+  }
+  .now-strip{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:11px 20px;
+    border-bottom:1px solid var(--line);
+    font-size:11.5px;
+    color:var(--ink-dim);
+    letter-spacing:0.02em;
+  }
+  .now-strip .live{
+    color:var(--done);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .live::before{
+    content:"";
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--done);
+    display:inline-block;
+    box-shadow:0 0 0 0 rgba(95,174,126,0.6);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(95,174,126,0.5);}
+    70%{box-shadow:0 0 0 6px rgba(95,174,126,0);}
+    100%{box-shadow:0 0 0 0 rgba(95,174,126,0);}
+  }
+
+  /* ---------- summary ---------- */
+  .summary{
+    display:flex;
+    gap:1px;
+    background:var(--line);
+    margin:18px 16px 0;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .pill{
+    flex:1;
+    background:var(--surface);
+    padding:14px 14px 12px;
+    text-align:left;
+  }
+  .pill .num{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:26px;
+    font-weight:500;
+    line-height:1;
+  }
+  .pill .lbl{
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-top:5px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+  .pill.exocin .dot{background:var(--exo);}
+  .pill.fml .dot{background:var(--fml);}
+
+  /* ---------- next up ---------- */
+  .next-up{
+    margin:14px 16px 0;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+    background:var(--surface);
+    position:relative;
+  }
+  .next-up.is-overdue{border-color:rgba(226,104,90,0.4);background:var(--overdue-bg);}
+  .next-up .tag{
+    font-size:10px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    font-weight:600;
+  }
+  .next-up.is-overdue .tag{color:var(--overdue);}
+  .next-up .when{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:30px;
+    font-weight:480;
+    margin:6px 0 3px;
+    letter-spacing:-0.01em;
+  }
+  .next-up .what{
+    font-size:13px;
+    color:var(--ink-dim);
+  }
+
+  .report-btn{
+    display:block;
+    width:calc(100% - 32px);
+    margin:10px 16px 0;
+    background:var(--ink);
+    color:#000;
+    border:none;
+    border-radius:12px;
+    padding:15px 18px;
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    cursor:pointer;
+  }
+  .report-btn:active{opacity:0.8;}
+  .report-btn .sub{
+    display:block;
+    font-size:11.5px;
+    font-weight:400;
+    opacity:0.6;
+    margin-top:3px;
+  }
+
+  /* ---------- sections ---------- */
+  .section-title{
+    margin:26px 16px 10px;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    font-weight:600;
+  }
+
+  /* ---------- day blocks ---------- */
+  .day-block{margin:0 16px 0;}
+  .day-head{
+    display:flex;
+    align-items:baseline;
+    gap:9px;
+    margin:22px 0 9px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .day-head .d-num{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:17px;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .day-head .d-date{
+    font-size:11px;
+    color:var(--ink-faint);
+    letter-spacing:0.03em;
+  }
+  .day-head .d-phase{
+    margin-left:auto;
+    font-size:9.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:3px 9px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .phase-both{background:var(--fml-dim);color:var(--fml);}
+  .phase-taper1{background:#2a2410;color:#c9a24f;}
+  .phase-taper2{background:#1c1c1c;color:var(--ink-dim);}
+
+  .dose-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    margin-bottom:6px;
+    background:var(--surface);
+    border:1px solid var(--line);
+  }
+  .dose-row.done{background:var(--done-bg);border-color:rgba(95,174,126,0.25);}
+  .dose-row.overdue{background:var(--overdue-bg);border-color:rgba(226,104,90,0.3);}
+
+  .checkbox{
+    width:24px;height:24px;
+    border-radius:7px;
+    border:1.5px solid var(--line);
+    background:var(--surface-raised);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .checkbox.checked{
+    background:var(--done);
+    border-color:var(--done);
+    color:#000;
+  }
+  .dose-info{flex:1;min-width:0;}
+  .dose-time{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:500;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .dose-med{
+    font-size:11px;
+    letter-spacing:0.02em;
+    margin-top:2px;
+    color:var(--ink-dim);
+  }
+  .med-tag{
+    display:inline-block;
+    padding:2px 7px;
+    border-radius:5px;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    margin-right:6px;
+  }
+  .tag-exo{background:var(--exo-dim);color:var(--exo);}
+  .tag-fml{background:var(--fml-dim);color:var(--fml);}
+  .dose-status{
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-faint);
+    flex-shrink:0;
+    font-weight:600;
+  }
+  .dose-row.overdue .dose-status{color:var(--overdue);}
+  .dose-row.done .dose-status{color:var(--done);}
+
+  /* ---------- timeline ---------- */
+  .timeline{
+    margin:0 16px;
+    border-left:1.5px solid var(--line);
+    padding-left:16px;
+  }
+  .tl-item{
+    position:relative;
+    padding:7px 0;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  .tl-item::before{
+    content:"";
+    position:absolute;
+    left:-20.5px;
+    top:12px;
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--done);
+  }
+  .tl-item.upcoming::before{background:var(--ink-faint);}
+  .tl-item.overdue::before{background:var(--overdue);}
+  .tl-time{font-weight:600;margin-right:7px;color:var(--ink);}
+  .tl-actual{opacity:0.55;font-size:11px;margin-left:7px;}
+
+  /* ---------- footer ---------- */
+  .legend{
+    margin:30px 16px 0;
+    font-size:11px;
+    color:var(--ink-faint);
+    line-height:1.7;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .reset-btn{
+    display:block;
+    margin:24px auto 0;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-faint);
+    font-size:11px;
+    padding:7px 16px;
+    border-radius:20px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .loading{padding:48px 20px;text-align:center;color:var(--ink-faint);font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">Post-op eye drop schedule</p>
+  <h1>Drop Log</h1>
+</div>
+<div class="now-strip">
+  <span>Today is <span id="today-label">—</span></span>
+  <span class="live">tracking live</span>
+</div>
+
+<div id="app">
+  <div class="loading">Loading your schedule…</div>
+</div>
+
+<div id="timeline-section"></div>
+
+<div class="legend" id="legend"></div>
+<button class="reset-btn" id="reset-btn">Reset all check-ins</button>
+
+<script>
+(function(){
+  // ---- Backend: Cloudflare Pages Function at /api/state, backed by KV ----
+  let SERVER_STATE = { start: null, checkins: {} };
+
+  async function loadServerState(){
+    try{
+      const res = await fetch('/api/state');
+      if(!res.ok) throw new Error('Server returned ' + res.status);
+      const data = await res.json();
+      SERVER_STATE = { start: data.start || null, checkins: data.checkins || {} };
+    }catch(e){
+      console.error('Could not load state from server', e);
+      throw e;
+    }
+    return SERVER_STATE;
+  }
+
+  async function saveServerState(partial){
+    SERVER_STATE = { ...SERVER_STATE, ...partial };
+    try{
+      await fetch('/api/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partial)
+      });
+    }catch(e){
+      console.error('Could not save state to server', e);
+    }
+  }
+
+  async function getStart(){
+    if(SERVER_STATE.start){
+      return new Date(SERVER_STATE.start);
+    }
+    const start = new Date(Date.now() - 4*60*60*1000);
+    await saveServerState({ start: start.toISOString() });
+    return start;
+  }
+
+  async function getCheckins(){
+    return SERVER_STATE.checkins || {};
+  }
+
+  async function saveCheckins(obj){
+    await saveServerState({ checkins: obj });
+  }
+
+  function fmtTime(d){
+    return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  }
+  function fmtDateShort(d){
+    return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+  }
+  function dayIndexOf(d, start){
+    const diff = d - start;
+    return Math.floor(diff / (24*60*60*1000));
+  }
+
+  function buildDoses(start){
+    const doses = [];
+
+    // EXOCIN: every 6h for 7 days
+    let t = new Date(start);
+    const exocinEnd = new Date(start.getTime() + 7*24*60*60*1000);
+    while(t < exocinEnd){
+      doses.push({med:'EXOCIN', time:new Date(t), tag:'tag-exo', label:'Exocin · 1 drop'});
+      t = new Date(t.getTime() + 6*60*60*1000);
+    }
+
+    // FML: days 1-5 q6h, days 6-10 q12h, days 11-15 q24h
+    t = new Date(start);
+    const phase1End = new Date(start.getTime() + 5*24*60*60*1000);
+    const phase2End = new Date(start.getTime() + 10*24*60*60*1000);
+    const phase3End = new Date(start.getTime() + 15*24*60*60*1000);
+
+    while(t < phase1End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q6h)'});
+      t = new Date(t.getTime() + 6*60*60*1000);
+    }
+    while(t < phase2End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q12h)'});
+      t = new Date(t.getTime() + 12*60*60*1000);
+    }
+    while(t < phase3End){
+      doses.push({med:'FML', time:new Date(t), tag:'tag-fml', label:'FML · 1 drop (q24h)'});
+      t = new Date(t.getTime() + 24*60*60*1000);
+    }
+
+    doses.sort((a,b)=>a.time-b.time);
+    doses.forEach(d=> d.id = d.med+'-'+d.time.getTime());
+    return doses;
+  }
+
+  function phaseForDay(dayIdx){
+    if(dayIdx < 5) return {cls:'phase-both', label:'q6h · both'};
+    if(dayIdx < 10) return {cls:'phase-taper1', label:'FML q12h'};
+    if(dayIdx < 15) return {cls:'phase-taper2', label:'FML q24h'};
+    return {cls:'phase-taper2', label:'done'};
+  }
+
+  let START, DOSES, CHECKINS;
+
+  async function render(){
+    const now = new Date();
+    document.getElementById('today-label').textContent = fmtDateShort(now);
+
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+
+    const totalExo = DOSES.filter(d=>d.med==='EXOCIN').length;
+    const totalFml = DOSES.filter(d=>d.med==='FML').length;
+    const doneExo = DOSES.filter(d=>d.med==='EXOCIN' && CHECKINS[d.id]).length;
+    const doneFml = DOSES.filter(d=>d.med==='FML' && CHECKINS[d.id]).length;
+
+    const summary = document.createElement('div');
+    summary.className = 'summary';
+    summary.innerHTML = `
+      <div class="pill exocin"><div class="num">${doneExo}/${totalExo}</div><div class="lbl"><span class="dot"></span>Exocin</div></div>
+      <div class="pill fml"><div class="num">${doneFml}/${totalFml}</div><div class="lbl"><span class="dot"></span>FML</div></div>
+    `;
+    app.appendChild(summary);
+
+    const upcoming = DOSES.filter(d => !CHECKINS[d.id]).sort((a,b)=>a.time-b.time)[0];
+    if(upcoming){
+      const overdue = upcoming.time - now < 0;
+      const nu = document.createElement('div');
+      nu.className = 'next-up' + (overdue ? ' is-overdue' : '');
+      nu.innerHTML = `
+        <div class="tag">${overdue ? 'overdue' : 'next dose'}</div>
+        <div class="when">${fmtTime(upcoming.time)}</div>
+        <div class="what">${upcoming.label}</div>
+      `;
+      app.appendChild(nu);
+
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'report-btn';
+      reportBtn.innerHTML = `I just took this dose
+        <span class="sub">Logs ${upcoming.med} now at ${fmtTime(now)}</span>`;
+      reportBtn.addEventListener('click', async ()=>{
+        CHECKINS[upcoming.id] = new Date().toISOString();
+        await saveCheckins(CHECKINS);
+        render();
+      });
+      app.appendChild(reportBtn);
+    } else {
+      const nu = document.createElement('div');
+      nu.className = 'next-up';
+      nu.innerHTML = `<div class="tag">complete</div><div class="when">All done</div><div class="what">15-day course finished</div>`;
+      app.appendChild(nu);
+    }
+
+    const byDay = {};
+    DOSES.forEach(d=>{
+      const idx = dayIndexOf(d.time, START);
+      if(!byDay[idx]) byDay[idx] = [];
+      byDay[idx].push(d);
+    });
+
+    const dayWrap = document.createElement('div');
+    dayWrap.className = 'day-block';
+
+    Object.keys(byDay).sort((a,b)=>a-b).forEach(dayIdx=>{
+      const dayDoses = byDay[dayIdx];
+      const dayDate = dayDoses[0].time;
+      const phase = phaseForDay(parseInt(dayIdx));
+
+      const head = document.createElement('div');
+      head.className = 'day-head';
+      head.innerHTML = `
+        <span class="d-num">Day ${parseInt(dayIdx)+1}</span>
+        <span class="d-date">${fmtDateShort(dayDate)}</span>
+        <span class="d-phase ${phase.cls}">${phase.label}</span>
+      `;
+      dayWrap.appendChild(head);
+
+      dayDoses.forEach(dose=>{
+        const row = document.createElement('div');
+        const isDone = !!CHECKINS[dose.id];
+        const isOverdue = !isDone && dose.time < now;
+        row.className = 'dose-row' + (isDone ? ' done' : '') + (isOverdue ? ' overdue' : '');
+
+        const medShort = dose.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const detailPart = dose.label.split('·')[1] ? dose.label.split('·')[1].trim() : '1 drop';
+
+        row.innerHTML = `
+          <div class="checkbox ${isDone?'checked':''}" data-id="${dose.id}">${isDone ? '✓' : ''}</div>
+          <div class="dose-info">
+            <div class="dose-time">${fmtTime(dose.time)}</div>
+            <div class="dose-med"><span class="med-tag ${dose.tag}">${medShort}</span>${detailPart}</div>
+          </div>
+          <div class="dose-status">${isDone ? 'taken' : (isOverdue ? 'overdue' : '')}</div>
+        `;
+        dayWrap.appendChild(row);
+      });
+    });
+
+    app.appendChild(dayWrap);
+
+    app.querySelectorAll('.checkbox').forEach(cb=>{
+      cb.addEventListener('click', async ()=>{
+        const id = cb.getAttribute('data-id');
+        if(CHECKINS[id]){
+          delete CHECKINS[id];
+        } else {
+          CHECKINS[id] = new Date().toISOString();
+        }
+        await saveCheckins(CHECKINS);
+        render();
+      });
+    });
+
+    renderTimeline(now);
+  }
+
+  function renderTimeline(now){
+    const tlSection = document.getElementById('timeline-section');
+    tlSection.innerHTML = '';
+
+    const taken = DOSES.filter(d => CHECKINS[d.id]).sort((a,b)=> new Date(CHECKINS[a.id]) - new Date(CHECKINS[b.id]));
+    const remaining = DOSES.filter(d => !CHECKINS[d.id]).sort((a,b)=>a.time-b.time).slice(0,6);
+
+    if(taken.length){
+      const title = document.createElement('div');
+      title.className = 'section-title';
+      title.textContent = `Taken so far (${taken.length})`;
+      tlSection.appendChild(title);
+
+      const tl = document.createElement('div');
+      tl.className = 'timeline';
+      taken.slice().reverse().forEach(d=>{
+        const actualTime = new Date(CHECKINS[d.id]);
+        const medShort = d.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const item = document.createElement('div');
+        item.className = 'tl-item';
+        item.innerHTML = `<span class="tl-time">${fmtTime(d.time)}</span>${medShort} scheduled<span class="tl-actual">→ logged ${fmtTime(actualTime)}, ${fmtDateShort(actualTime)}</span>`;
+        tl.appendChild(item);
+      });
+      tlSection.appendChild(tl);
+    }
+
+    if(remaining.length){
+      const title2 = document.createElement('div');
+      title2.className = 'section-title';
+      title2.textContent = 'Coming up next';
+      tlSection.appendChild(title2);
+
+      const tl2 = document.createElement('div');
+      tl2.className = 'timeline';
+      remaining.forEach(d=>{
+        const medShort = d.med === 'EXOCIN' ? 'EXO' : 'FML';
+        const isOverdue = d.time < now;
+        const item = document.createElement('div');
+        item.className = 'tl-item upcoming' + (isOverdue ? ' overdue' : '');
+        item.innerHTML = `<span class="tl-time">${fmtTime(d.time)}</span>${medShort}${isOverdue ? ' — overdue' : ''} · ${fmtDateShort(d.time)}`;
+        tl2.appendChild(item);
+      });
+      tlSection.appendChild(tl2);
+    }
+  }
+
+  document.getElementById('legend').innerHTML = `
+    EXOCIN (antibiotic): 1 drop every 6h for 7 days · 28 doses total<br>
+    FML (steroid taper): days 1–5 q6h, days 6–10 q12h, days 11–15 q24h · tap a box to check off, tap again to undo
+  `;
+
+  document.getElementById('reset-btn').addEventListener('click', async ()=>{
+    if(confirm('Clear all check-ins? This cannot be undone.')){
+      CHECKINS = {};
+      await saveCheckins(CHECKINS);
+      render();
+    }
+  });
+
+  (async function init(){
+    const loadingTimeout = setTimeout(()=>{
+      const app = document.getElementById('app');
+      if(app && app.innerHTML.includes('Loading your schedule')){
+        app.innerHTML = '<div class="loading">Still working — if this stays stuck, tap the menu (•••) and reload.</div>';
+      }
+    }, 4000);
+
+    try{
+      await loadServerState();
+      START = await getStart();
+      CHECKINS = await getCheckins();
+      DOSES = buildDoses(START);
+      clearTimeout(loadingTimeout);
+      render();
+      setInterval(render, 60000);
+    }catch(e){
+      clearTimeout(loadingTimeout);
+      const app = document.getElementById('app');
+      app.innerHTML = '<div class="loading">Something went wrong loading the schedule: ' + (e && e.message ? e.message : String(e)) + '</div>';
+      console.error(e);
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>
